@@ -1,23 +1,16 @@
-from Réseau import *
+# coding: utf8
 
-inf = float('inf')
+from Simulation import Simulation
 
-r = Reseau(
-    ['A', 'B', 'C', 'D'],
-    [
-        [inf, inf, 6, 5],
-        [2, inf, inf, 12],
-        [inf, 3, inf, inf],
-        [inf, inf, 1, inf]
-    ],
-    [
-        [12, 8, 6, 2],
-        [10, 5, 3, 3],
-        [53, 3, 23, 1],
-        [8, 5, 1, 12]
-    ]
-)
 
-r.ajouter_noeud('E')
-r.ajouter_lien('E', 'A', 12)
-r.afficher()
+s = Simulation.Simulation(60, 1/30.0)
+
+s.route.ajouter_section(50, 14, 2)
+s.route.affichage_section()
+
+s.initialisation(10, 0)
+s.lancer()
+
+# for p in range(10, 1500, 50):
+#     s.initialisation(p, 0)
+#     s.lancer()
