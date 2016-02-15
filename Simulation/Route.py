@@ -152,7 +152,8 @@ class Route(object):
         p = self.longueur - distance
         while p >= 0:
             section = self.numero_section(p)
-            self.ajouter_voiture(p, self.sections[section][2])
+            # self.ajouter_voiture(p, self.sections[section][2])
+            self.ajouter_voiture(p, 0)
             p -= distance
 
     def update(self, delta, temps_total, indice):
