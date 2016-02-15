@@ -15,14 +15,14 @@ class Simulation(object):
         self.temps = temps
         self.delta = delta
         self.route = Route(3000, 36, self.delta)
+        self.analyse = False  # Permet de ne pas afficher les graphiques et de sauvegarder automatiquement
 
-    def initialisation(self, espacement, vitesse):
+    def initialisation(self, espacement):
         """
         Lance l'initialisation de la route
         :param espacement: distance entre deux voitures (float)
-        :param vitesse: vitesse initiale des voitures (float)
         """
-        self.route.preparation(espacement, vitesse)
+        self.route.preparation(espacement)
 
     def parametres(self, flux, densite):
         """
@@ -60,18 +60,21 @@ class Simulation(object):
                 print("Avancement de la simulation : " + str(round(p*100)) + "% (" + str(round(temps_total)) + "s de " + str(self.temps) + "s).")
         print("Fin de la simulation")
 
-        """ Début des analyses """
-        rep = input("Analyse de la simulation ? (o/n)")
-        while rep == "o":
-            self.route.analyse_voitures(nombre=1)
-            self.route.animation()
-            # self.route.analyse_trafic()
+        if not self.analyse:
+            """ Début des analyses """
             rep = input("Analyse de la simulation ? (o/n)")
-        """ Fin des analyses """
+            while rep == "o":
+                self.route.analyse_voitures(nombre=1)
+                self.route.animation()
+                # self.route.analyse_trafic()
+                rep = input("Analyse de la simulation ? (o/n)")
+            """ Fin des analyses """
 
-        """ Sauvegarde des données """
-        rep = input("Sauvegarde ? (o/n)")
-        if rep == "o":
+            """ Sauvegarde des données """
+            rep = input("Sauvegarde ? (o/n)")
+            if rep == "o":
+                self.route.sauvegarde()
+        else:
             self.route.sauvegarde()
 
         print("Arrêt de la simulation")

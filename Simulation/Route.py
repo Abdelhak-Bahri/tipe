@@ -42,16 +42,15 @@ class Route(object):
 
         """
         Liste contenant les données relatives aux sections de la route,
-        selon le format suivant: [position_debut, longueur, vitesse_limite, temps_securite]
+        selon le format suivant: [position_debut, longueur, vitesse_limite]
         """
         self.sections = []
 
-    def preparation(self, espacement, vitesse):
+    def preparation(self, espacement):
         """
         Permet d'initialiser toutes les valeurs de la classe Route à leur valeur par defaut,
         et lance la génération du trafic routier initial (t=0)
         :param espacement: distance entre deux voitures (float)
-        :param vitesse: vitesse initiale des voitures (float)
         """
         self.voitures_valides = []
         self.voitures = []
@@ -65,24 +64,23 @@ class Route(object):
         self.densite_active = True
         self.temps_total = 0
 
-        self.generer_trafic(espacement, vitesse)
+        self.generer_trafic(espacement)
 
-    def ajouter_section(self, longueur, vitesse_limite, temps_securite, indice=0):
+    def ajouter_section(self, longueur, vitesse_limite, indice=0):
         """
         Ajoute une section à la liste des sections dèjà existantes
         :param longueur: longueur en mètre
         :param vitesse_limite: vitesse maximale autorisée sur la route en mètres par seconde
-        :param temps_securite: temps de sécurité avec la voiture de devant
         :param indice: emplacement de la section dans la route, par défaut au début de la route
         """
-        self.sections.insert(indice, [0, longueur, vitesse_limite, temps_securite])
+        self.sections.insert(indice, [0, longueur, vitesse_limite])
         self.organisation_sections()
 
     def affichage_section(self):
         """
         Affichage des sections sous forme de tableau avec alignement automatique
         """
-        S = ["Numéro", "Position", "Longueur", "Vitesse maximale", "Temps de sécurité"]
+        S = ["Numéro", "Position", "Longueur", "Vitesse maximale"]
 
         # Affichage de la liste S avec alignement
         ligne = " "
@@ -146,13 +144,12 @@ class Route(object):
         if self.temps_total == 0:  # Uniquement au début de la simulation
             self.densite_active = False
 
-    def generer_trafic(self, distance, vitesse):
+    def generer_trafic(self, distance):
         """
         Génération du trafic routier initial
         :param distance: distance entre deux voitures (float)
-        :param vitesse: vitesse initiale des voitures (float)
         """
-        p = self.longueur
+        p = self.longueur - distance
         while p >= 0:
             section = self.numero_section(p)
             self.ajouter_voiture(p, self.sections[section][2])
@@ -169,7 +166,8 @@ class Route(object):
         self.temps_total = temps_total # Sauvegarde du temps total de simulation
         self.indice = indice
 
-        for voiture in self.voitures_valides:
+        for i in range(self.N):
+            voiture = self.voitures_valides[self.N - i - 1]
             if voiture.valide:
                 i = self.voitures_valides.index(voiture)
                 if i != self.N-1: # Si la voiture n'est pas la première
@@ -187,7 +185,6 @@ class Route(object):
                     indice,
                     voiture_devant,
                     self.longueur,
-                    self.sections[indice_section][3],  # temps de sécurité
                     self.sections[indice_section][2]  # vitesse limite
                 )
 

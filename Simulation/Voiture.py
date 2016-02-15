@@ -17,13 +17,15 @@ class Voiture(object):
 
         self.donnees = []  # Tableau contenant les données enregistrées lors de la simulation
         self.position = position
+        self.position_totale = position  # Position sur la route sans le retour à l'origine lors d'une boucle
         self.vitesse = vitesse
         self.longueur = 4  # Longueur en mètre de la voiture
         self.a_max = 20  # Accélération maximale en m/s²
         self.a_min = 20  # Décélération maximale en m/s²
         self.valide = True  # Booléen pour savoir si la voiture doit être prise en compte dans la simulation
-        self.temps_reaction = 2  # Temps de réaction du conducteur en secondes
-        self.modele = Modele(self.a_max)  # Création du modèle pour la gestion de l'accélération
+        self.temps_reaction = 2  # Temps de réaction commun aux conducteurs en secondes
+        # Création du modèle pour la gestion de l'accélération
+        self.modele = Modele(self.a_max, self.a_min, self.temps_reaction, self.longueur)
 
         # Création de données pour les positions et les vitesses pour le temps de réaction
         indice_decalage = round(self.temps_reaction / delta)
@@ -32,13 +34,14 @@ class Voiture(object):
                 temps_total + delta * i - delta * indice_decalage,
                 [
                     self.position,
+                    self.position_totale,
                     self.vitesse,
                     0
                 ],
                 indice + i - indice_decalage
             ])
 
-    def update(self, temps_total, delta, indice, voiture_devant, longueur, temps_securite, vitesse_limite, boucle=True):
+    def update(self, temps_total, delta, indice, voiture_devant, longueur, vitesse_limite, boucle=True):
         """
         Mise à jour de la voiture
         :param temps_total: temps total de la simulation
@@ -46,9 +49,8 @@ class Voiture(object):
         :param indice: nombre de tours dans la boucle effectués
         :param voiture_devant: objet Voiture, voiture qui la précède
         :param longueur: longueur de la route
-        :param temps_securite: temps de sécurité avec la voiture de devant
         :param vitesse_limite: vitesse maximale autorisée sur la section
-        :parma boucle: booleén qui indique si la route boucle sur elle même
+        :param boucle: booleén qui indique si la route boucle sur elle même
         """
 
         if self.position >= longueur:
@@ -64,20 +66,27 @@ class Voiture(object):
             # L'indice de décalage représente le décalage dans la prise d'information du conducteur
             # Ainsi, on récupère les données de la voiture de devant en prenant en compte ce décalage
             indice_decalage = indice - round(self.temps_reaction / delta)
+
+            # Récupération des données de la voiture de devant
             v = voiture_devant.obtenir_vitesse(indice_decalage)
-            p = voiture_devant.obtenir_position(indice_decalage)
+            d = voiture_devant.obtenir_position_totale(indice_decalage)
+            # nombre_boucle_voiture_devant = voiture_devant.obtenir_nombre_boucle()
 
             # Distance relative
-            if self.position <= p:
-                distance = p - self.position
+            if d <= self.position_totale:
+                distance = longueur + d - self.position_totale
             else:
-                distance = longueur + p - self.position
+                distance = d - self.position_totale
+
+            if distance <= 0:  # erreur liée au temps de réaction ou à un dépassement non souhaité dans la simulation
+                distance = 0
+
         else:
             distance = 1000000
             v = 100000
 
         # Calcul de l'accélération appliquée par le conducteur
-        a = self.modele.calcul_acceleration(v, self.vitesse, distance, vitesse_limite, temps_securite, self.longueur)
+        a = self.modele.calcul_acceleration(v, self.vitesse, distance, vitesse_limite)
 
         # On limite l'accélération
         a = min(a, self.a_max)
@@ -94,6 +103,7 @@ class Voiture(object):
             temps_total,
             [
                 self.position,
+                self.position_totale,
                 self.vitesse,
                 a
             ],
@@ -127,7 +137,7 @@ class Voiture(object):
         """
         for d in self.donnees:
             if d[2] == i:
-                return d[1][1]
+                return d[1][2]
         return None
 
     def obtenir_position(self, i):
@@ -140,6 +150,16 @@ class Voiture(object):
                 return d[1][0]
         return None
 
+    def obtenir_position_totale(self, i):
+        """
+        :param i: indice
+        :return: la position de la voiture à l'indice i
+        """
+        for d in self.donnees:
+            if d[2] == i:
+                return d[1][1]
+        return None
+
     def obtenir_vitesses(self):
         """
         :return: une liste contenant les vitesses de la voiture en fonction du temps
@@ -148,7 +168,7 @@ class Voiture(object):
         r = []
         for d in self.donnees:
             t.append(d[0])
-            r.append(d[1][1])
+            r.append(d[1][2])
         return t, r
 
     def obtenir_acceleration(self):
@@ -159,5 +179,5 @@ class Voiture(object):
         r = []
         for d in self.donnees:
             t.append(d[0])
-            r.append(d[1][2])
+            r.append(d[1][3])
         return t, r
