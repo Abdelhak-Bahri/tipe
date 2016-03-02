@@ -13,6 +13,9 @@ Résolution numérique de l'équation aux dérivées partielles:
 # Paramètres de la simulation numérique
 xmax = 20
 tmax = 40
+Vmax = 0.5
+Pmax = 1
+
 # Pas d'intégration
 Dt = 0.1
 Dx = 0.1
@@ -23,16 +26,16 @@ Nt = int(tmax // Dt) + 1
 
 def f(u):
     """ Fonction f(u) de l'équation différentielle """
-    return 0.5*u**2
+    return Vmax*u*(1-u/Pmax)
 
 def initialisation():
     """ Renvoie u0 la condition initiale du problème """
-    t = gaussienne()
+    t = choc()
     return t
 
 def bord(T, t):
     """ Conditions aux bords pour x=0 et x=xmax au temps d'intégration t """
-    T[0, t] = 0
+    T[0, t] = 1
     T[-1, t] = 0
     return T
 
@@ -72,7 +75,7 @@ def visualisation(T):
     fig = plt.figure()
     data, = plt.plot([], [])
     plt.xlim(0, xmax)
-    plt.ylim(0, 1.5)
+    plt.ylim(0, 1.2)
 
     X = np.arange(0, Nx) * Dx
 

@@ -1,16 +1,33 @@
 # coding: utf8
 
 from Simulation import Simulation
+from math import exp
+import cProfile
 
 
-s = Simulation.Simulation(60, 1/30.0)
+def gaussienne(x):
+    return 0.06*(exp(-0.00001*(x-500)**2)*0.5 + 0.1)
 
-s.route.ajouter_section(1000, 25)
-s.route.affichage_section()
 
-s.initialisation(1000)
+def feux_rouges(x):
+    if x <= 1000:
+        return 0.07
+    else:
+        return 0
+
+
+def constante(x):
+    return 0.02
+
+s = Simulation.Simulation(250, 1/20.0)
+s.route.ajouter_section(2000, 25)
+
+s.initialisation(gaussienne, verification=False)
+# s.analyse = True
+# s.route.desactiver_densite()
+# s.route.desactiver_flux()
+s.route.boucle = False
+s.sauvegarde = False
+
+# cProfile.run('s.lancer()')
 s.lancer()
-
-# for p in range(10, 1500, 50):
-#     s.initialisation(p, 0)
-#     s.lancer()

@@ -36,21 +36,22 @@ class Modele(object):
         """
 
         # Calcul du temps de sécurité
-        temps_securite = vitesse_limite / self.a_min + self.temps_reaction
+        temps_securite = 3 * vitesse_limite / self.a_min + self.temps_reaction
 
         distance_securite = temps_securite * v_i + self.longueur  # Distance à respecter avec le véhicule de devant
         delta_x = distance_securite - distance
 
-        # Pour éviter les problèmes de division par 0
-        v_j += 0.00001
-        vitesse_limite += 0.00001
-
         if delta_x < 0:  # Si la distance de sécurité est respectée, on cherche à aller le plus vite possible
             vitesse_desiree = vitesse_limite
         else:  # Sinon on adopte une vitesse plus faible que celle de devant
-            vitesse_desiree = v_j * 0.5
+            vitesse_desiree = v_j * (1 - delta_x / distance_securite)
 
         if vitesse_desiree > vitesse_limite:  # On majore la vitesse désirée par la vitesse limite
             vitesse_desiree = vitesse_limite
+        if vitesse_desiree < 0:
+            vitesse_desiree = 0
+
+        # Pour éviter les problèmes de division par 0
+        vitesse_desiree += 0.0000001
 
         return self.a_max * (1 - v_i / vitesse_desiree)

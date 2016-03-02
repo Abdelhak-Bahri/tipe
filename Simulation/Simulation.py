@@ -14,15 +14,18 @@ class Simulation(object):
         """
         self.temps = temps
         self.delta = delta
-        self.route = Route(3000, 36, self.delta)
+        self.route = Route(self.delta)
         self.analyse = False  # Permet de ne pas afficher les graphiques et de sauvegarder automatiquement
+        self.sauvegarde = True  # Permet de ne pas effectuer de sauvegarde de la simulation
 
-    def initialisation(self, espacement):
+    def initialisation(self, fonction, pas=1, verification=True):
         """
         Lance l'initialisation de la route
-        :param espacement: distance entre deux voitures (float)
+        :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
+        :param pas: le pas pour le calcul de l'aire
+        :param verification: booléen qui permet de ne pas vérifier la génération du trafic routier
         """
-        self.route.preparation(espacement)
+        self.route.preparation(fonction, pas, verification)
 
     def parametres(self, flux, densite):
         """
@@ -49,12 +52,12 @@ class Simulation(object):
         i = 0  # Sert à incrémenter la variable 'p'
         indice = 0  # Nombre de tours dans la boucle effectués
 
-        while temps_total <= self.temps: # Boucle principale du programme
+        while temps_total <= self.temps:  # Boucle principale du programme
             self.route.update(self.delta, temps_total, indice)
             indice += 1
-            temps_total += self.delta # Mise à jour du temps
+            temps_total += self.delta  # Mise à jour du temps
             i += self.delta / self.temps
-            if i >= 0.01: # On affiche l'avancement 'p'
+            if i >= 0.01:  # On affiche l'avancement 'p'
                 p += 0.01
                 i -= 0.01
                 print("Avancement de la simulation : " + str(round(p*100)) + "% (" + str(round(temps_total)) + "s de " + str(self.temps) + "s).")
@@ -64,17 +67,19 @@ class Simulation(object):
             """ Début des analyses """
             rep = input("Analyse de la simulation ? (o/n)")
             while rep == "o":
-                self.route.analyse_voitures(nombre=1)
+                self.route.analyse_voitures()
                 self.route.animation()
-                # self.route.analyse_trafic()
+                self.route.analyse_trafic()
                 rep = input("Analyse de la simulation ? (o/n)")
             """ Fin des analyses """
 
             """ Sauvegarde des données """
-            rep = input("Sauvegarde ? (o/n)")
-            if rep == "o":
-                self.route.sauvegarde()
+            if self.sauvegarde:
+                rep = input("Sauvegarde ? (o/n)")
+                if rep == "o":
+                    self.route.sauvegarde()
         else:
-            self.route.sauvegarde()
+            if self.sauvegarde:
+                self.route.sauvegarde()
 
         print("Arrêt de la simulation")

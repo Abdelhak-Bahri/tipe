@@ -10,23 +10,21 @@ import os
 
 class Route(object):
 
-    def __init__(self, longueur, vitesse_limite, delta):
+    def __init__(self, delta):
         """
         Initialisation de la classe Voiture
-        :param longueur: longueur de la route en mètres
-        :param vitesse_limite: vitesse maximale autorisée sur la route en mètres par seconde
         :param delta: pas de temps d'intégration de la simulation
         """
-        self.longueur = longueur
-        self.vitesse_limite = vitesse_limite
+        self.longueur = 0  # Longueur de la route en mètres
         self.delta = delta
         self.temps_total = 0
         self.indice = 0
+        self.boucle = True
 
         self.voitures_valides = [] # Liste contenant les voitures valides uniquement
-        self.voitures = [] # Liste contenant toutes les voitures
-        self.N_tot = 0 # Nombre de voitures total sur la route
-        self.N = 0 # Nombre de voitures valides sur la route
+        self.voitures = []  # Liste contenant toutes les voitures
+        self.N_tot = 0  # Nombre de voitures total sur la route
+        self.N = 0  # Nombre de voitures valides sur la route
 
         """ Tableau de données """
         self.flux = []
@@ -46,11 +44,13 @@ class Route(object):
         """
         self.sections = []
 
-    def preparation(self, espacement):
+    def preparation(self, fonction, pas=1, verification=True):
         """
         Permet d'initialiser toutes les valeurs de la classe Route à leur valeur par defaut,
         et lance la génération du trafic routier initial (t=0)
-        :param espacement: distance entre deux voitures (float)
+        :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
+        :param pas: le pas pour le calcul de l'aire
+        :param verification: booléen qui permet de ne pas vérifier la génération du trafic routier
         """
         self.voitures_valides = []
         self.voitures = []
@@ -63,8 +63,11 @@ class Route(object):
         self.flux_active = True
         self.densite_active = True
         self.temps_total = 0
+        self.indice = 0
 
-        self.generer_trafic(espacement)
+        self.organisation_sections()
+
+        self.generer_trafic(fonction, pas, verification)
 
     def ajouter_section(self, longueur, vitesse_limite, indice=0):
         """
@@ -74,7 +77,6 @@ class Route(object):
         :param indice: emplacement de la section dans la route, par défaut au début de la route
         """
         self.sections.insert(indice, [0, longueur, vitesse_limite])
-        self.organisation_sections()
 
     def affichage_section(self):
         """
@@ -124,17 +126,31 @@ class Route(object):
                 self.sections[i][0] = self.sections[i-1][0] + self.sections[i-1][1]
                 self.longueur += self.sections[i][1]  # Mise à jour de la longueur de la route
 
-    def numero_section(self, position):
+    def numero_section(self, position, numero_precedent=-1):
         """
         Renvoie l'indice de la section traversée par la voiture pour une position donnée à l'intérieur de la route
+        :param position: la position de la voiture
+        :param numero_precedent: le numéro de la section ou se trouve la voiture
+        :return: le numéro de la section à la position entrée en paramètre
         """
-        if position <= self.longueur:  # On vérifie que la voiture est dans la route
-            for section in self.sections:
-                position -= section[1]
-                if position <= 0:  # La voiture se situe alors dans la section
-                    return self.sections.index(section)
+        if numero_precedent >= 0:
+            section = self.sections[numero_precedent]
+            if position >= section[0] + section[1]:
+                if position <= self.longueur:
+                    return numero_precedent + 1
+                else:
+                    return 0
+                pass
+            else:
+                return numero_precedent
         else:
-            return 0
+            if position <= self.longueur:  # On vérifie que la voiture est dans la route
+                for i in range(0, len(self.sections)):
+                    position -= self.sections[i][1]
+                    if position <= 0:  # La voiture se situe alors dans la section
+                        return i
+            else:
+                return 0
 
     def desactiver_flux(self):
         if self.temps_total == 0:  # Uniquement au début de la simulation
@@ -144,17 +160,51 @@ class Route(object):
         if self.temps_total == 0:  # Uniquement au début de la simulation
             self.densite_active = False
 
-    def generer_trafic(self, distance):
+    def generer_trafic(self, fonction, pas=1, verification=True):
         """
         Génération du trafic routier initial
-        :param distance: distance entre deux voitures (float)
+        :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
+        :param pas: le pas pour le calcul de l'aire
+        :param verification: booléen qui permet de ne pas vérifier la génération du trafic routier
         """
-        p = self.longueur - distance
-        while p >= 0:
-            section = self.numero_section(p)
-            # self.ajouter_voiture(p, self.sections[section][2])
-            self.ajouter_voiture(p, 0)
-            p -= distance
+
+        confirmation = ""
+        while confirmation != "o":
+            positions = []  # Liste contenant la position des voitures
+            Y = []  # Utile uniquement pour l'affichage
+
+            aire = 0
+            for x in range(0, self.longueur, pas):
+                D = fonction(x)
+                if D > 0.25:
+                    print("Attention la densité maximale est de 0.25 ! (ici ", max(D), ")")
+                aire += D * pas
+                if int(aire) >= 1:  # Si on a au moins une voiture
+                    positions.append(x)
+                    Y.append(1)
+                    aire -= int(aire)
+
+            if not verification:
+                break
+
+            plot(positions, Y, 'bo')
+            ylim(0, 2)
+            xlim(0, self.longueur)
+            show()
+
+            confirmation = input("Confirmer le positionnement des voitures ou changer le pas ?(o/n)\n")
+            if confirmation != "o":
+                pas = int(input("Pas ?\n"))
+
+        l = len(positions)
+        for x in range(0, l):
+            position = positions[l - x - 1]
+            section = self.numero_section(position)
+            self.ajouter_voiture(position, self.sections[section][2], section)
+
+        self.voitures_valides[l-1].premiere = True  # On marque la première voiture
+
+        print("Génération du trafic réussie")
 
     def update(self, delta, temps_total, indice):
         """
@@ -164,30 +214,34 @@ class Route(object):
         :param indice: nombre de tours dans la boucle effectués
         """
 
-        self.temps_total = temps_total # Sauvegarde du temps total de simulation
+        self.temps_total = temps_total  # Sauvegarde du temps total de simulation
         self.indice = indice
 
-        for i in range(self.N):
-            voiture = self.voitures_valides[self.N - i - 1]
-            if voiture.valide:
-                i = self.voitures_valides.index(voiture)
-                if i != self.N-1: # Si la voiture n'est pas la première
-                    voiture_devant = self.voitures_valides[i+1]
-                else: # Si c'est la première voiture
-                    if self.N >= 2: # S'il y a plus de 2 voitures alors la voiture de devant est la première
-                        voiture_devant = self.voitures_valides[0]
-                    else:
-                        voiture_devant = None
-                indice_section = self.numero_section(voiture.position)
-                # Mise à jour de la voiture
-                voiture.update(
-                    temps_total,
-                    delta,
-                    indice,
-                    voiture_devant,
-                    self.longueur,
-                    self.sections[indice_section][2]  # vitesse limite
-                )
+        vitesse_totale = 0
+
+        for j in range(self.N):
+            i = self.N - j - 1
+            voiture = self.voitures_valides[i]
+            if i != self.N-1:  # Si la voiture n'est pas la première
+                voiture_devant = self.voitures_valides[i+1]
+            else:  # Si c'est la première voiture
+                if self.N >= 2 and self.boucle:  # S'il y a plus de 2 voitures alors la voiture de devant est la première
+                    voiture_devant = self.voitures_valides[0]
+                else:
+                    voiture_devant = None
+            indice_section = self.numero_section(voiture.position, numero_precedent=voiture.numero_section)
+            # Mise à jour de la voiture
+            voiture.update(
+                temps_total,
+                delta,
+                indice,
+                voiture_devant,
+                self.longueur,
+                self.sections[indice_section][2],  # vitesse limite
+                boucle=self.boucle
+            )
+
+            vitesse_totale += voiture.vitesse
 
         # On retire les voitures invalides de la simulation
         for voiture in self.voitures_valides:
@@ -209,12 +263,9 @@ class Route(object):
                 F
             ])
 
-        v = 0
-        for voiture in self.voitures_valides:
-            v += voiture.vitesse
         self.flux_total.append([
             temps_total,
-            v / self.longueur
+            vitesse_totale / self.longueur
         ])
 
         # Mise à jour de la densité
@@ -237,14 +288,15 @@ class Route(object):
             self.N / self.longueur
         ])
 
-    def ajouter_voiture(self, position, vitesse, index=0):
+    def ajouter_voiture(self, position, vitesse, numero_section, index=0):
         """
         Ajoute une voiture dans la simulation
         :param position: position initiale en mètres
         :param vitesse: vitesse initiale en mètres par seconde
+        :param numero_section: numéro de la section de départ
         :param index: emplacement de la voiture sur la route, par défaut derrière toutes les autres
         """
-        voiture = Voiture(position, vitesse, self.delta, self.temps_total, self.indice)
+        voiture = Voiture(position, vitesse, self.delta, self.temps_total, self.indice, numero_section)
         self.voitures_valides.insert(index, voiture)
         self.voitures.append(voiture)
         self.N += 1
@@ -271,47 +323,30 @@ class Route(object):
 
     def afficher_flux(self):
         Z = []
-        X = []
-        Y = [k for k in range(0, self.longueur + self.pas, self.pas)]
+        maxi = []
         for d in self.flux:
-            X.append(d[0])
+            maxi.append(max(d[1]))
             Z.append(d[1])
 
-        m = np.matrix(Z)
+        m = matrix(Z)
 
-        pcolor(np.array(X), np.array(Y), np.array(m.T), cmap="afmhot")
-        ylim(0, self.longueur)
-        xlim(0, self.temps_total)
+        imshow(m.T, interpolation="none", cmap="afmhot", aspect="auto", vmin=0, vmax=max(maxi), origin="lower", extent=[0, self.temps_total, 0, self.longueur])
+        colorbar()
+
         show()
 
     def afficher_densite(self):
         Z = []
-        X = []
-        Y = [k for k in range(0, self.longueur + self.pas, self.pas)]
+        maxi = []
         for d in self.densite:
-            X.append(d[0])
+            maxi.append(max(d[1]))
             Z.append(d[1])
 
-        m = np.matrix(Z)
+        m = matrix(Z)
 
-        pcolor(np.array(X), np.array(Y), np.array(m.T), cmap="afmhot")
-        ylim(0, self.longueur)
-        xlim(0, self.temps_total)
-        show()
+        imshow(m.T, interpolation="none", cmap="afmhot", aspect="auto", vmin=0, vmax=max(maxi), origin="lower", extent=[0, self.temps_total, 0, self.longueur])
+        colorbar()
 
-    def afficher_flux_densite(self):
-        X = []
-        Y = []
-
-        for d in self.flux_total:
-            Y.append(d[1])
-        for d in self.densite_totale:
-            X.append(d[1])
-
-        hist2d(np.array(X), np.array(Y), cmap="afmhot", bins=60)
-        # plot(X, Y, 'bo')
-        xlim(0, max(X)*1.2)
-        ylim(0, max(Y)*1.2)
         show()
 
     def afficher_position(self, indice):
@@ -363,9 +398,9 @@ class Route(object):
         legend(loc="best")
         show()
 
-    def analyse_voitures(self, nombre=-1):
-        if nombre <= 0:
-            nombre = self.N_tot
+    def analyse_voitures(self):
+        nombre = int(self.N_tot / 10) + 1
+
         print("Analyse des positions...")
         for i in range(nombre):
             self.afficher_position(i)
@@ -382,16 +417,13 @@ class Route(object):
         self.afficher(0, self.temps_total, -30, 30)
 
     def analyse_trafic(self):
-        print("Analyse du flux...")
         if self.flux_active:
+            print("Analyse du flux...")
             self.afficher_flux()
 
-        print("Analyse de la densité...")
         if self.densite_active:
+            print("Analyse de la densité...")
             self.afficher_densite()
-
-        print("Génération de la courbe flux-densité...")
-        self.afficher_flux_densite()
 
     def animation(self):
 
@@ -433,7 +465,7 @@ class Route(object):
         nom_fichier = str(d.day) + "-" + str(d.month) + "-" + str(d.year) + "_" + str(d.hour) + str(d.minute) + str(d.second) + str(d.microsecond)
         print("Sauvegarde dans le fichier : Données/" + nom_fichier)
 
-        with open(os.getcwd() + "/Données/" + nom_fichier, 'wb') as fichier:
+        with open(os.getcwd() + "/Simulation/Données/" + nom_fichier, 'xb') as fichier:
             p = pickle.Pickler(fichier)
             """ Enregistrement des données de la simualation """
             # Paramètres de la simulation
@@ -443,5 +475,13 @@ class Route(object):
                 self.longueur
             ])
 
+            # Calcul de la vitesse moyenne sur la route
+            if self.N != 0:
+                vitesse_moyenne = 0
+                for voiture in self.voitures_valides:
+                    vitesse_moyenne += voiture.vitesse
+                vitesse_moyenne /= self.N
+
             p.dump(self.flux_total)
             p.dump(self.densite_totale)
+            p.dump(vitesse_moyenne)

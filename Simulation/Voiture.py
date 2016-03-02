@@ -5,7 +5,7 @@ from Modele import Modele
 
 class Voiture(object):
 
-    def __init__(self, position, vitesse, delta, temps_total, indice):
+    def __init__(self, position, vitesse, delta, temps_total, indice, numero_section):
         """
         Initialisation de la classe Voituresimulation
         :param position: position initiale en mètres
@@ -26,10 +26,13 @@ class Voiture(object):
         self.temps_reaction = 2  # Temps de réaction commun aux conducteurs en secondes
         # Création du modèle pour la gestion de l'accélération
         self.modele = Modele(self.a_max, self.a_min, self.temps_reaction, self.longueur)
+        self.numero_section = numero_section  # Numéro de la section dans laquelle se situe la voiture
+        self.premiere = False  # Indique si la voiture est la première sur la route
 
         # Création de données pour les positions et les vitesses pour le temps de réaction
-        indice_decalage = round(self.temps_reaction / delta)
+        indice_decalage = round(self.temps_reaction / delta) + 1
         for i in range(indice_decalage):
+            print("lol")
             self.donnees.append([
                 temps_total + delta * i - delta * indice_decalage,
                 [
@@ -65,22 +68,21 @@ class Voiture(object):
             """ Intégration du temps de réaction """
             # L'indice de décalage représente le décalage dans la prise d'information du conducteur
             # Ainsi, on récupère les données de la voiture de devant en prenant en compte ce décalage
-            indice_decalage = indice - round(self.temps_reaction / delta)
+            indice_decalage = indice - round(self.temps_reaction / delta) - 1
 
             # Récupération des données de la voiture de devant
-            v = voiture_devant.obtenir_vitesse(indice_decalage)
-            d = voiture_devant.obtenir_position_totale(indice_decalage)
-            # nombre_boucle_voiture_devant = voiture_devant.obtenir_nombre_boucle()
+            v, d = voiture_devant.obtenir_vitesse_position(indice_decalage)
 
             # Distance relative
-            if d <= self.position_totale:
-                distance = longueur + d - self.position_totale
-            else:
-                distance = d - self.position_totale
-
-            if distance <= 0:  # erreur liée au temps de réaction ou à un dépassement non souhaité dans la simulation
-                distance = 0
-
+            distance = d - self.position_totale
+            if distance <= 0:
+                if self.premiere:  # Cas particulier de la première voiture
+                    if boucle:
+                        distance += longueur
+                    else:
+                        distance += 1000000
+                else:  # Sinon c'est un dépassement non voulu
+                    distance = -1000000
         else:
             distance = 1000000
             v = 100000
@@ -97,6 +99,7 @@ class Voiture(object):
         if self.vitesse < 0:  # Impossible de reculer
             self.vitesse = 0
         self.position += self.vitesse * delta
+        self.position_totale += self.vitesse * delta
 
         # Enregistrement des données
         self.donnees.append([
@@ -130,35 +133,54 @@ class Voiture(object):
                 r.append(d[1][0])
             return i, r
 
+    def obtenir_vitesse_position(self, i):
+        """
+        :param i: indice
+        :return: la vitesse et la position de la voiture à l'indice i
+        """
+
+        j = len(self.donnees) - 1
+        while j >= 0:
+            d = self.donnees[j]
+            if d[2] == i:
+                return d[1][2], d[1][1]
+            j -= 1
+
     def obtenir_vitesse(self, i):
         """
         :param i: indice
         :return: la vitesse de la voiture à l'indice i
         """
-        for d in self.donnees:
+        j = len(self.donnees) - 1
+        while j >= 0:
+            d = self.donnees[j]
             if d[2] == i:
                 return d[1][2]
-        return None
+            j -= 1
 
     def obtenir_position(self, i):
         """
         :param i: indice
         :return: la position de la voiture à l'indice i
         """
-        for d in self.donnees:
+        j = len(self.donnees) - 1
+        while j >= 0:
+            d = self.donnees[j]
             if d[2] == i:
                 return d[1][0]
-        return None
+            j -= 1
 
     def obtenir_position_totale(self, i):
         """
         :param i: indice
         :return: la position de la voiture à l'indice i
         """
-        for d in self.donnees:
+        j = len(self.donnees) - 1
+        while j >= 0:
+            d = self.donnees[j]
             if d[2] == i:
                 return d[1][1]
-        return None
+            j -= 1
 
     def obtenir_vitesses(self):
         """
