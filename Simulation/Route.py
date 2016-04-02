@@ -44,13 +44,12 @@ class Route(object):
         """
         self.sections = []
 
-    def preparation(self, fonction, pas=1, verification=True):
+    def preparation(self, fonction, affichage=True):
         """
         Permet d'initialiser toutes les valeurs de la classe Route à leur valeur par defaut,
         et lance la génération du trafic routier initial (t=0)
         :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
-        :param pas: le pas pour le calcul de l'aire
-        :param verification: booléen qui permet de ne pas vérifier la génération du trafic routier
+        :param affichage: booléen qui permet d'afficher et de confirmer la génération du trafic
         """
         self.voitures_valides = []
         self.voitures = []
@@ -67,7 +66,7 @@ class Route(object):
 
         self.organisation_sections()
 
-        self.generer_trafic(fonction, pas, verification)
+        return self.generer_trafic(fonction, affichage)
 
     def ajouter_section(self, longueur, vitesse_limite, indice=0):
         """
@@ -160,41 +159,43 @@ class Route(object):
         if self.temps_total == 0:  # Uniquement au début de la simulation
             self.densite_active = False
 
-    def generer_trafic(self, fonction, pas=1, verification=True):
+    def generer_trafic(self, fonction, affichage=True):
         """
         Génération du trafic routier initial
         :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
-        :param pas: le pas pour le calcul de l'aire
-        :param verification: booléen qui permet de ne pas vérifier la génération du trafic routier
+        :param affichage: booléen qui permet d'afficher et de confirmer la génération du trafic
+        :return: True si la génération du trafic est correcte, False pour arrêter la simulation
         """
 
-        confirmation = ""
-        while confirmation != "o":
-            positions = []  # Liste contenant la position des voitures
-            Y = []  # Utile uniquement pour l'affichage
+        positions = []  # Liste contenant la position des voitures
+        Y = []  # Utile uniquement pour l'affichage
+        x_precedent = 0
 
-            aire = 0
-            for x in range(0, self.longueur, pas):
-                D = fonction(x)
-                if D > 0.25:
-                    print("Attention la densité maximale est de 0.25 ! (ici ", max(D), ")")
-                aire += D * pas
-                if int(aire) >= 1:  # Si on a au moins une voiture
-                    positions.append(x)
-                    Y.append(1)
-                    aire -= int(aire)
+        aire = 0
+        for x in range(0, self.longueur, 1):
+            D = fonction(x)
+            aire += D * 1
+            if int(aire) >= 1:  # Si on a au moins une voiture
+                if x - x_precedent < 4 and len(positions) != 0:
+                        print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
+                        return False
+                if self.longueur - x < 4 and 0 in positions and self.boucle:
+                    print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
+                    return False
+                positions.append(x)
+                x_precedent = x
+                Y.append(int(aire))
+                aire -= int(aire)
 
-            if not verification:
-                break
-
+        if affichage:
             plot(positions, Y, 'bo')
             ylim(0, 2)
             xlim(0, self.longueur)
             show()
 
-            confirmation = input("Confirmer le positionnement des voitures ou changer le pas ?(o/n)\n")
+            confirmation = input("Confirmer le positionnement des voitures ?(o/n)\n")
             if confirmation != "o":
-                pas = int(input("Pas ?\n"))
+                return False
 
         l = len(positions)
         for x in range(0, l):
@@ -205,6 +206,7 @@ class Route(object):
         self.voitures_valides[l-1].premiere = True  # On marque la première voiture
 
         print("Génération du trafic réussie")
+        return True
 
     def update(self, delta, temps_total, indice):
         """
@@ -248,40 +250,62 @@ class Route(object):
             if not voiture.valide:
                 self.retirer_voiture(voiture)
 
-        # Mise à jour du flux
-        if self.flux_active:
-            F = []
-            for k in range(0, self.longueur, self.pas):  # On découpe la route en intervalle de longueur 'self.pas'
-                v_totale = 0
-                for voiture in self.voitures_valides:
-                    if voiture.position <= k + self.pas and voiture.position >= k:
-                        v_totale += voiture.vitesse
-                F.append(v_totale / self.pas)
+        # Mise à jour de la densité
+        if self.densite_active:
+            D = []
+            P = []
+            l = len(self.voitures_valides)
+            if l == 1:
+                P.append(0)
+                D.append(0)
+                x = self.voitures_valides[0].position
+                P.append(x)
+                D.append(1/self.longueur)
+                P.append(self.longueur)
+                D.append(0)
+            elif l == 0:
+                P.append(0)
+                D.append(0)
+                P.append(self.longueur)
+                D.append(0)
+            else:
+                if not self.boucle:
+                    P.append(0)
+                    D.append(0)
+                    for i in range(0, l):
+                        x = self.voitures_valides[i].position
+                        if i != 0:
+                            x_precedent = self.voitures_valides[i-1].position
+                        else:
+                            x_precedent = 0
+                        P.append(x)
+                        D.append(1/(x-x_precedent))
+                    P.append(self.longueur)
+                    D.append(0)
+                else:
+                    for i in range(0, l):
+                        voiture = self.voitures_valides[i]
+                        if i == 0:
+                            voiture_precedente = self.voitures_valides[len(self.voitures_valides) - 1]
+                        else:
+                            voiture_precedente = self.voitures_valides[i-1]
+                        x = voiture.position_totale
+                        x_precedent = voiture_precedente.position_totale
+                        if voiture_precedente.premiere:
+                            x += self.longueur
+                        D.append(1/(x - x_precedent))
+                        P.append(voiture.position - (x - x_precedent))
 
-            self.flux.append([
+            self.densite.append([
                 temps_total,
-                F
+                P,
+                D
             ])
 
         self.flux_total.append([
             temps_total,
             vitesse_totale / self.longueur
         ])
-
-        # Mise à jour de la densité
-        if self.densite_active:
-            D = []
-            for k in range(0, self.longueur, self.pas):
-                N_totale = 0
-                for voiture in self.voitures_valides:
-                    if voiture.position <= k + self.pas and voiture.position >= k:
-                        N_totale += 1
-                D.append(N_totale / self.pas)
-
-            self.densite.append([
-                temps_total,
-                D
-            ])
 
         self.densite_totale.append([
             temps_total,
@@ -337,14 +361,31 @@ class Route(object):
 
     def afficher_densite(self):
         Z = []
-        maxi = []
+        maxi = 0
         for d in self.densite:
-            maxi.append(max(d[1]))
-            Z.append(d[1])
+            z = []
+            P = d[1]
+            D = d[2]
+            l = len(D)
+
+            for i in range(0, l-1):
+                p_1 = int(P[i])
+                p_2 = int(P[i+1])
+                d_1 = D[i]
+                d_2 = D[i+1]
+                if p_1 != p_2:
+                    a = (d_2-d_1)/(p_2-p_1)
+                    b = d_2 - p_2*a
+                    for k in range(p_1, p_2):
+                        densite = a*k+b
+                        if densite > maxi:
+                            maxi = densite
+                        z.append(densite)
+            Z.append(z)
 
         m = matrix(Z)
 
-        imshow(m.T, interpolation="none", cmap="afmhot", aspect="auto", vmin=0, vmax=max(maxi), origin="lower", extent=[0, self.temps_total, 0, self.longueur])
+        imshow(m.T, interpolation="nearest", cmap="afmhot", aspect="auto", vmin=0, vmax=maxi, origin="lower", extent=[0, self.temps_total, 0, self.longueur])
         colorbar()
 
         show()

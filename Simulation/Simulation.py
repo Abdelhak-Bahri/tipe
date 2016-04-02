@@ -18,14 +18,13 @@ class Simulation(object):
         self.analyse = False  # Permet de ne pas afficher les graphiques et de sauvegarder automatiquement
         self.sauvegarde = True  # Permet de ne pas effectuer de sauvegarde de la simulation
 
-    def initialisation(self, fonction, pas=1, verification=True):
+    def initialisation(self, fonction, affichage=True):
         """
         Lance l'initialisation de la route
         :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
-        :param pas: le pas pour le calcul de l'aire
-        :param verification: booléen qui permet de ne pas vérifier la génération du trafic routier
+        :param affichage: booléen qui permet d'afficher et de confirmer la génération du trafic
         """
-        self.route.preparation(fonction, pas, verification)
+        return self.route.preparation(fonction, affichage)
 
     def parametres(self, flux, densite):
         """
@@ -67,8 +66,8 @@ class Simulation(object):
             """ Début des analyses """
             rep = input("Analyse de la simulation ? (o/n)")
             while rep == "o":
-                self.route.analyse_voitures()
-                self.route.animation()
+                # self.route.analyse_voitures()
+                # self.route.animation()
                 self.route.analyse_trafic()
                 rep = input("Analyse de la simulation ? (o/n)")
             """ Fin des analyses """

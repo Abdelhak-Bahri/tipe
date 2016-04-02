@@ -19,15 +19,16 @@ def feux_rouges(x):
 def constante(x):
     return 0.02
 
-s = Simulation.Simulation(250, 1/20.0)
+s = Simulation.Simulation(50, 1/20.0)
 s.route.ajouter_section(2000, 25)
 
-s.initialisation(gaussienne, verification=False)
-# s.analyse = True
-# s.route.desactiver_densite()
-# s.route.desactiver_flux()
-s.route.boucle = False
-s.sauvegarde = False
+resultat = s.initialisation(gaussienne, affichage=False)
+if resultat:
+    # s.analyse = True
+    # s.route.desactiver_densite()
+    s.route.desactiver_flux()
+    s.route.boucle = False
+    s.sauvegarde = False
 
-# cProfile.run('s.lancer()')
-s.lancer()
+    # cProfile.run('s.lancer()')
+    s.lancer()

@@ -30,9 +30,8 @@ class Voiture(object):
         self.premiere = False  # Indique si la voiture est la première sur la route
 
         # Création de données pour les positions et les vitesses pour le temps de réaction
-        indice_decalage = round(self.temps_reaction / delta) + 1
+        indice_decalage = int(self.temps_reaction / delta) + 1
         for i in range(indice_decalage):
-            print("lol")
             self.donnees.append([
                 temps_total + delta * i - delta * indice_decalage,
                 [
@@ -56,19 +55,12 @@ class Voiture(object):
         :param boucle: booleén qui indique si la route boucle sur elle même
         """
 
-        if self.position >= longueur:
-            if boucle:
-                self.position -= longueur
-            else:
-                self.valide = False
-                return None
-
         # Influence de la voiture de devant
         if voiture_devant is not None:
             """ Intégration du temps de réaction """
             # L'indice de décalage représente le décalage dans la prise d'information du conducteur
             # Ainsi, on récupère les données de la voiture de devant en prenant en compte ce décalage
-            indice_decalage = indice - round(self.temps_reaction / delta) - 1
+            indice_decalage = indice - int(self.temps_reaction / delta) - 1
 
             # Récupération des données de la voiture de devant
             v, d = voiture_devant.obtenir_vitesse_position(indice_decalage)
@@ -100,6 +92,13 @@ class Voiture(object):
             self.vitesse = 0
         self.position += self.vitesse * delta
         self.position_totale += self.vitesse * delta
+
+        if self.position >= longueur:
+            if boucle:
+                self.position -= longueur
+            else:
+                self.valide = False
+                return None
 
         # Enregistrement des données
         self.donnees.append([
