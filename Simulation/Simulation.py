@@ -1,6 +1,7 @@
 # coding: utf8
 
 from Simulation.Route import Route
+from time import clock
 
 
 class Simulation(object):
@@ -41,7 +42,7 @@ class Simulation(object):
         """
         Début de la simulation
         """
-
+        t_debut = clock()
         if len(self.route.sections) == 0:  # Vérifie s'il y a au minimum une section dans la route
             print("Il faut au moins une section !")
             return None
@@ -61,14 +62,15 @@ class Simulation(object):
                 i -= 0.01
                 print("Avancement de la simulation : " + str(round(p*100)) + "% (" + str(round(temps_total)) + "s de " + str(self.temps) + "s).")
         print("Fin de la simulation")
+        print("Simulation réalisée en ", round(clock() - t_debut, 2), "secondes")
 
         if not self.analyse:
             """ Début des analyses """
             rep = input("Analyse de la simulation ? (o/n)")
             while rep == "o":
                 # self.route.analyse_voitures()
-                self.route.animation()
-                # self.route.analyse_trafic()
+                # self.route.animation()
+                self.route.analyse_trafic()
                 rep = input("Analyse de la simulation ? (o/n)")
             """ Fin des analyses """
 
