@@ -67,8 +67,8 @@ class Simulation(object):
             rep = input("Analyse de la simulation ? (o/n)")
             while rep == "o":
                 # self.route.analyse_voitures()
-                # self.route.animation()
-                self.route.analyse_trafic()
+                self.route.animation()
+                # self.route.analyse_trafic()
                 rep = input("Analyse de la simulation ? (o/n)")
             """ Fin des analyses """
 

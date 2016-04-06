@@ -254,7 +254,12 @@ class Route(object):
             D.append(0)
             F.append(0)
 
+            i_0 = self.recuperer_indice_derniere_voiture()
+
             for i in range(0, l):  # On parcourt chaque voiture
+                i = i + i_0
+                if i > l-1:
+                    i -= l
                 voiture = self.voitures_valides[i]
                 if i == 0:  # Cas de la première voiture
                     if self.boucle:
@@ -267,6 +272,7 @@ class Route(object):
                 else:
                     voiture_precedente = self.voitures_valides[i - 1]
                     x_precedent = voiture_precedente.position_totale
+                    v_precedent = voiture_precedente.vitesse
                 x = voiture.position_totale
                 v = voiture.vitesse
                 if self.boucle:
@@ -326,6 +332,20 @@ class Route(object):
         """
         self.voitures_valides.remove(voiture)
         self.N -= 1
+
+    def recuperer_indice_derniere_voiture(self):
+        """
+        :return: l'indice de la derniere voiture sur la route (position la plus proche de 0)
+        """
+        l = len(self.voitures_valides)
+        p = self.voitures_valides[0].position
+        for i in range(0, l):
+            position = self.voitures_valides[i].position
+            if position < p:
+                return i
+            else:
+                p = position
+        return 0
 
     """
     Début des fonctions pour l'affichage de graphiques,

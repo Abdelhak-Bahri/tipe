@@ -25,8 +25,8 @@ s.route.ajouter_section(2000, 25)
 resultat = s.initialisation(gaussienne, affichage=False)
 if resultat:
     # s.analyse = True
-    # s.route.desactiver_flux_densite()
-    s.route.boucle = False
+    s.route.desactiver_flux_densite()
+    s.route.boucle = True
     s.sauvegarde = False
 
     # cProfile.run('s.lancer()')
