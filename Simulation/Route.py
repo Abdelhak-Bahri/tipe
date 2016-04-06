@@ -33,8 +33,7 @@ class Route(object):
         self.densite_totale = []
 
         # Permet de ne pas enregistrer (et donc calculer) les flux et/ou densités sur la route
-        self.flux_active = True
-        self.densite_active = True
+        self.active_flux_densite = True
 
         self.pas = 50  # Pas de distance pour le calcul du flux et de la densité
 
@@ -59,8 +58,7 @@ class Route(object):
         self.densite = []
         self.flux_total = []
         self.densite_totale = []
-        self.flux_active = True
-        self.densite_active = True
+        self.active_flux_densite = True
         self.temps_total = 0
         self.indice = 0
 
@@ -151,13 +149,9 @@ class Route(object):
             else:
                 return 0
 
-    def desactiver_flux(self):
+    def desactiver_flux_densite(self):
         if self.temps_total == 0:  # Uniquement au début de la simulation
-            self.flux_active = False
-
-    def desactiver_densite(self):
-        if self.temps_total == 0:  # Uniquement au début de la simulation
-            self.densite_active = False
+            self.active_flux_densite = False
 
     def generer_trafic(self, fonction, affichage=True):
         """
@@ -251,55 +245,54 @@ class Route(object):
                 self.retirer_voiture(voiture)
 
         # Mise à jour de la densité
-        if self.densite_active:
-            D = []
+        if self.active_flux_densite:
+            D = []  # Densité
+            F = []  # Flux
             P = []
             l = len(self.voitures_valides)
-            if l == 1:
-                P.append(0)
-                D.append(0)
-                x = self.voitures_valides[0].position
-                P.append(x)
-                D.append(1/self.longueur)
-                P.append(self.longueur)
-                D.append(0)
-            elif l == 0:
-                P.append(0)
-                D.append(0)
-                P.append(self.longueur)
-                D.append(0)
-            else:
-                if not self.boucle:
-                    P.append(0)
-                    D.append(0)
-                    for i in range(0, l):
-                        x = self.voitures_valides[i].position
-                        if i != 0:
-                            x_precedent = self.voitures_valides[i-1].position
-                        else:
-                            x_precedent = 0
-                        P.append(x)
-                        D.append(1/(x-x_precedent))
-                    P.append(self.longueur)
-                    D.append(0)
-                else:
-                    for i in range(0, l):
-                        voiture = self.voitures_valides[i]
-                        if i == 0:
-                            voiture_precedente = self.voitures_valides[len(self.voitures_valides) - 1]
-                        else:
-                            voiture_precedente = self.voitures_valides[i-1]
-                        x = voiture.position_totale
+            P.append(0)
+            D.append(0)
+            F.append(0)
+
+            for i in range(0, l):  # On parcourt chaque voiture
+                voiture = self.voitures_valides[i]
+                if i == 0:  # Cas de la première voiture
+                    if self.boucle:
+                        voiture_precedente = self.voitures_valides[l - 1]
                         x_precedent = voiture_precedente.position_totale
-                        if voiture_precedente.premiere:
-                            x += self.longueur
-                        D.append(1/(x - x_precedent))
-                        P.append(voiture.position - (x - x_precedent))
+                        v_precedent = voiture_precedente.vitesse
+                    else:
+                        x_precedent = 0
+                        v_precedent = 0
+                else:
+                    voiture_precedente = self.voitures_valides[i - 1]
+                    x_precedent = voiture_precedente.position_totale
+                x = voiture.position_totale
+                v = voiture.vitesse
+                if self.boucle:
+                    if voiture_precedente.premiere:
+                        x += self.longueur
+                distance = (x - x_precedent)
+                D.append(1 / distance)
+                F.append((v + v_precedent)/(2*distance))
+                position = voiture.position - distance/2
+                if position < 0:
+                    position = voiture.position/2
+                P.append(position)
+
+            P.append(self.longueur)
+            D.append(0)
+            F.append(0)
 
             self.densite.append([
                 temps_total,
                 P,
                 D
+            ])
+            self.flux.append([
+                temps_total,
+                P,
+                F
             ])
 
         self.flux_total.append([
@@ -347,14 +340,33 @@ class Route(object):
 
     def afficher_flux(self):
         Z = []
-        maxi = []
+        maxi = 0
         for d in self.flux:
-            maxi.append(max(d[1]))
-            Z.append(d[1])
+            z = []
+            P = d[1]
+            F = d[2]
+            l = len(F)
+
+            for i in range(0, l-1):
+                p_1 = int(P[i])
+                p_2 = int(P[i+1])
+                d_1 = F[i]
+                d_2 = F[i+1]
+                if p_1 != p_2:
+                    a = (d_2-d_1)/(p_2-p_1)
+                    b = d_2 - p_2*a
+                    for k in range(p_1, p_2):
+                        flux = a*k+b
+                        if flux < 0:
+                            flux = 0
+                        if flux > maxi:
+                            maxi = flux
+                        z.append(flux)
+            Z.append(z)
 
         m = matrix(Z)
 
-        imshow(m.T, interpolation="none", cmap="afmhot", aspect="auto", vmin=0, vmax=max(maxi), origin="lower", extent=[0, self.temps_total, 0, self.longueur])
+        imshow(m.T, interpolation="nearest", cmap="afmhot", aspect="auto", vmin=0, vmax=maxi, origin="lower", extent=[0, self.temps_total, 0, self.longueur])
         colorbar()
 
         show()
@@ -378,9 +390,11 @@ class Route(object):
                     b = d_2 - p_2*a
                     for k in range(p_1, p_2):
                         densite = a*k+b
+                        if densite < 0:
+                            densite = 0.0
                         if densite > maxi:
                             maxi = densite
-                        z.append(densite)
+                        z.append(round(densite, 4))
             Z.append(z)
 
         m = matrix(Z)
@@ -458,13 +472,11 @@ class Route(object):
         self.afficher(0, self.temps_total, -30, 30)
 
     def analyse_trafic(self):
-        if self.flux_active:
-            print("Analyse du flux...")
-            self.afficher_flux()
-
-        if self.densite_active:
+        if self.active_flux_densite:
             print("Analyse de la densité...")
             self.afficher_densite()
+            print("Analyse du flux...")
+            self.afficher_flux()
 
     def animation(self):
 
