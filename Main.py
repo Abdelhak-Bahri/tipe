@@ -1,33 +1,43 @@
 # coding: utf8
 
 from Simulation import Simulation
-from math import exp
+from math import exp, pi
 import cProfile
 
-
+# Paramètres de la gaussienne
+sigma = 100
+mu = 500
+A = 30
+cste = 0.01
 def gaussienne(x):
-    return 0.06*(exp(-0.00001*(x-500)**2)*0.5 + 0.1)
+    return exp(-(x-mu)**2/(2*sigma**2))/(sigma*2*pi) * A + cste
 
-
+# Paramètres pour le feux rouges
+position = 1000
+p = 0.07
 def feux_rouges(x):
-    if x <= 1000:
-        return 0.07
+    if x <= position:
+        return p
     else:
         return 0
 
-
+# Paramètres pour la répartition constante
+p = 0.006
 def constante(x):
-    return 0.02
+    return p
 
-s = Simulation.Simulation(20, 1/20.0)
-s.route.ajouter_section(2000, 25)
+s = Simulation.Simulation(60, 1/20.0)
+s.route.ajouter_section(1000, 25)
 
-resultat = s.initialisation(gaussienne, affichage=False)
+# s.route.ajout_indices_analyse([0, 1])
+
+resultat = s.initialisation(gaussienne, affichage=True)
 if resultat:
     # s.analyse = True
-    # s.route.desactiver_flux_densite()
-    s.route.boucle = False
+    s.route.desactiver_flux_densite()
+    s.route.boucle = True
     s.sauvegarde = False
+    s.animation = True
 
     # cProfile.run('s.lancer()')
     s.lancer()

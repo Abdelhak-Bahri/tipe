@@ -6,18 +6,23 @@ from time import clock
 
 class Simulation(object):
 
+    """
+    Présentation de la classe Simulation:
+    Cette classe permet la gestion globale de la simulation: initialisation, mise à jour de la route et du temps
+    """
+
     def __init__(self, temps, delta):
         """
         Initialisation de la classe Simulation
         :param temps: durée de la simulation en secondes
         :param delta: pas de temps de la simulation
-        :return:
         """
         self.temps = temps
         self.delta = delta
         self.route = Route(self.delta)
         self.analyse = False  # Permet de ne pas afficher les graphiques et de sauvegarder automatiquement
         self.sauvegarde = True  # Permet de ne pas effectuer de sauvegarde de la simulation
+        self.animation = False  # Permet de créer un fichier vidéo de la simulation dans le dossier 'Animation/'
 
     def initialisation(self, fonction, affichage=True):
         """
@@ -68,11 +73,15 @@ class Simulation(object):
             """ Début des analyses """
             rep = input("Analyse de la simulation ? (o/n)")
             while rep == "o":
-                # self.route.analyse_voitures()
-                # self.route.animation()
+                self.route.analyse_voitures()
                 self.route.analyse_trafic()
                 rep = input("Analyse de la simulation ? (o/n)")
             """ Fin des analyses """
+
+            """ Sauvegarde de l'animation """
+            if self.animation:
+                print("Génération de l'animation...")
+                self.route.animation()
 
             """ Sauvegarde des données """
             if self.sauvegarde:
@@ -80,7 +89,6 @@ class Simulation(object):
                 if rep == "o":
                     self.route.sauvegarde()
         else:
-            if self.sauvegarde:
-                self.route.sauvegarde()
+            self.route.sauvegarde()
 
         print("Arrêt de la simulation")

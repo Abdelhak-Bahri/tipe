@@ -1,20 +1,25 @@
 # coding: utf8
 
-from Modele import Modele
-
+from Comportement import Comportement
 
 class Voiture(object):
 
+    """
+    Présentation de la classe Voiture;
+    Cette classe stocke les données relatives à une voiture (position, vitesse, etc.) et permet la mise à jour de ces
+    paramètres via la fonction update.
+    Elle est associée à un modèle de comportement qui permet de déterminer l'accélération de la voiture
+    """
+
     def __init__(self, position, vitesse, delta, temps_total, indice, numero_section):
         """
-        Initialisation de la classe Voituresimulation
+        Initialisation de la classe Voiture
         :param position: position initiale en mètres
         :param vitesse: vitesse initiale en mètres par seconde
         :param delta: pas de temps de la simulation
         :param temps_total: temps total de la simulation
         :param indice: nombre de tours dans la boucle effectués
         """
-
         self.donnees = []  # Tableau contenant les données enregistrées lors de la simulation
         self.position = position
         self.position_totale = position  # Position sur la route sans le retour à l'origine lors d'une boucle
@@ -25,7 +30,7 @@ class Voiture(object):
         self.valide = True  # Booléen pour savoir si la voiture doit être prise en compte dans la simulation
         self.temps_reaction = 2  # Temps de réaction commun aux conducteurs en secondes
         # Création du modèle pour la gestion de l'accélération
-        self.modele = Modele(self.a_max, self.a_min, self.temps_reaction, self.longueur)
+        self.comportement = Comportement(self.a_max, self.a_min, self.temps_reaction, self.longueur)
         self.numero_section = numero_section  # Numéro de la section dans laquelle se situe la voiture
         self.premiere = False  # Indique si la voiture est la première sur la route
 
@@ -80,7 +85,7 @@ class Voiture(object):
             v = 100000
 
         # Calcul de l'accélération appliquée par le conducteur
-        a = self.modele.calcul_acceleration(v, self.vitesse, distance, vitesse_limite)
+        a = self.comportement.calcul_acceleration(v, self.vitesse, distance, vitesse_limite)
 
         # On limite l'accélération
         a = min(a, self.a_max)

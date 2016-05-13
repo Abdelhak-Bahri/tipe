@@ -2,16 +2,18 @@
 
 from pylab import *
 
-"""
-Présentation du modèle :
-L'objectif de ce modèle est de déterminer l'accélération du véhicule en fonction des différents paramètres
-qui lui sont accessibles: sa vitesse, la vitesse de la voiture de devant et la distance la séparant à cette dernière.
-Le conducteur doit respecter une distance minimale de sécurité avec la voiture de devant ainsi que la limitation
-de vitesse de la section de route traversée.
-"""
 
+class Comportement(object):
 
-class Modele(object):
+    """
+    Présentation du modèle :
+    L'objectif de ce modèle est de déterminer l'accélération du véhicule en fonction des différents paramètres
+    qui lui sont accessibles: sa vitesse, la vitesse de la voiture de devant et la distance la séparant à cette dernière.
+    Le conducteur doit respecter une distance minimale de sécurité avec la voiture de devant ainsi que la limitation
+    de vitesse de la section de route traversée.
+    La voiture est asservie en vitesse à l'aide d'une fonction de transfert du premier ordre: H(p) = V(p)/Vd(p)
+    de paramètres K = 1 et Tau = V_max / a_max
+    """
 
     def __init__(self, a_max, a_min, temps_reaction, longueur):
         """
@@ -34,14 +36,20 @@ class Modele(object):
         :param vitesse_limite: vitesse_maximale autorisée sur la section de route
         :return: L'accélération du véhicule
         """
+        # Calcul du temps caractéristiques Tau
+        Tau = vitesse_limite / self.a_max
+
+        if Tau < 0.01:
+            Tau = 0.01
 
         # Calcul du temps de sécurité
-        temps_securite = 3 * vitesse_limite / self.a_min + self.temps_reaction
+        temps_securite = 3 * Tau + self.temps_reaction
 
-        distance_securite = temps_securite * v_i + self.longueur  # Distance à respecter avec le véhicule de devant
+        # Distance à respecter avec le véhicule de devant
+        distance_securite = temps_securite * v_i + self.longueur
         delta_x = distance_securite - distance
 
-        if delta_x < 0:  # Si la distance de sécurité est respectée, on cherche à aller le plus vite possible
+        if delta_x < 0:  # Si la distance de sécurité est respectée, on cherche à rouler le plus vite possible
             vitesse_desiree = vitesse_limite
         else:  # Sinon on adopte une vitesse plus faible que celle de devant
             vitesse_desiree = v_j * (1 - delta_x / distance_securite)
@@ -51,7 +59,5 @@ class Modele(object):
         if vitesse_desiree < 0:
             vitesse_desiree = 0
 
-        # Pour éviter les problèmes de division par 0
-        vitesse_desiree += 0.0000001
-
-        return self.a_max * (1 - v_i / vitesse_desiree)
+        # Application de la fonction de transfert
+        return (vitesse_desiree - v_i) / Tau

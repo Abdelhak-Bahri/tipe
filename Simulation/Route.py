@@ -4,6 +4,7 @@ from Simulation.Voiture import Voiture
 from pylab import *
 from matplotlib import animation
 from datetime import *
+from time import *
 import pickle
 import os
 
@@ -25,6 +26,7 @@ class Route(object):
         self.voitures = []  # Liste contenant toutes les voitures
         self.N_tot = 0  # Nombre de voitures total sur la route
         self.N = 0  # Nombre de voitures valides sur la route
+        self.indices_analyse = [] # Listes des indices des voitures à analyser
 
         """ Tableau de données """
         self.flux = []
@@ -158,42 +160,52 @@ class Route(object):
         Génération du trafic routier initial
         :param fonction: fonction python qui donne la densité du trafic en fonction de la position x
         :param affichage: booléen qui permet d'afficher et de confirmer la génération du trafic
-        :return: True si la génération du trafic est correcte, False pour arrêter la simulation
+        :return: True si la génération du trafic est correcte, False sinon
         """
 
         positions = []  # Liste contenant la position des voitures
-        Y = []  # Utile uniquement pour l'affichage
-        x_precedent = 0
 
+        # Pour l'affichage
+        Y = []
+        F = []
+        X = []
+
+        x_precedent = 0
         aire = 0
         for x in range(0, self.longueur, 1):
             D = fonction(x)
-            aire += D * 1
+
+            F.append(D)
+            X.append(x)
+
+            aire += D
             if int(aire) >= 1:  # Si on a au moins une voiture
                 if x - x_precedent < 4 and len(positions) != 0:
                         print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
-                        return False
                 if self.longueur - x < 4 and 0 in positions and self.boucle:
                     print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
-                    return False
                 positions.append(x)
                 x_precedent = x
                 Y.append(int(aire))
                 aire -= int(aire)
 
         if affichage:
+            subplot(211)
             plot(positions, Y, 'bo')
             ylim(0, 2)
             xlim(0, self.longueur)
+            subplot(212)
+            plot(X, F)
             show()
 
             confirmation = input("Confirmer le positionnement des voitures ?(o/n)\n")
             if confirmation != "o":
                 return False
 
+        # Ajout des voitures dans la simulation de la droite vers la gauche
         l = len(positions)
-        for x in range(0, l):
-            position = positions[l - x - 1]
+        for k in range(0, l):
+            position = positions[l - k - 1]
             section = self.numero_section(position)
             self.ajouter_voiture(position, self.sections[section][2], section)
 
@@ -338,13 +350,14 @@ class Route(object):
         :return: l'indice de la derniere voiture sur la route (position la plus proche de 0)
         """
         l = len(self.voitures_valides)
-        p = self.voitures_valides[0].position
-        for i in range(0, l):
-            position = self.voitures_valides[i].position
-            if position < p:
-                return i
-            else:
-                p = position
+        if l != 0:
+            p = self.voitures_valides[0].position
+            for i in range(0, l):
+                position = self.voitures_valides[i].position
+                if position < p:
+                    return i
+                else:
+                    p = position
         return 0
 
     """
@@ -431,7 +444,7 @@ class Route(object):
             print("Erreur ! Impossible de récupérer la voiture d'indice " + str(indice))
             return None
         X, Y = voiture.obtenir_positions()
-        plot(Y, X)
+        plot(X, Y)
 
     def afficher_vitesse(self, indice):
         try:
@@ -474,22 +487,21 @@ class Route(object):
         show()
 
     def analyse_voitures(self):
-        nombre = int(self.N_tot / 10) + 1
+        if len(self.indices_analyse) != 0:
+            print("Analyse des positions...")
+            for i in self.indices_analyse:
+                self.afficher_position(i)
+            self.afficher(0, self.temps_total, 0, self.longueur)
 
-        print("Analyse des positions...")
-        for i in range(nombre):
-            self.afficher_position(i)
-        self.afficher(0, self.longueur, 0, self.temps_total)
+            print("Analyse des vitesses...")
+            for i in self.indices_analyse:
+                self.afficher_vitesse(i)
+            self.afficher(0, self.temps_total, 0, 40)
 
-        print("Analyse des vitesses...")
-        for i in range(nombre):
-            self.afficher_vitesse(i)
-        self.afficher(0, self.temps_total, 0, 40)
-
-        print("Analyse des accélérations...")
-        for i in range(nombre):
-            self.afficher_acceleration(i)
-        self.afficher(0, self.temps_total, -30, 30)
+            print("Analyse des accélérations...")
+            for i in self.indices_analyse:
+                self.afficher_acceleration(i)
+            self.afficher(0, self.temps_total, -30, 30)
 
     def analyse_trafic(self):
         if self.active_flux_densite:
@@ -497,6 +509,12 @@ class Route(object):
             self.afficher_densite()
             print("Analyse du flux...")
             self.afficher_flux()
+
+    def ajout_indices_analyse(self, indices):
+        for i in indices:
+            if i not in self.indices_analyse:
+                self.indices_analyse.append(i)
+                print("Ajout de la voiture ", i, "à analyser")
 
     def animation(self):
 
@@ -525,9 +543,16 @@ class Route(object):
             title("Temps : " + str(round(self.delta * k)) + "s")
             return data
 
-        animation.FuncAnimation(fig, update, frames=N, interval=self.delta/1000, repeat=False)
-        legend()
-        show()
+        anim = animation.FuncAnimation(fig, update, frames=N, interval=self.delta/1000, repeat=False)
+
+        # legend()
+        # show()
+
+        # Writer = animation.writers['ffmpeg']
+        # writer = Writer(fps=30)
+
+        nom_fichier = strftime("%Y_%H_%M_%S")
+        anim.save("Animation/" + nom_fichier + ".mp4", writer='ffmpeg', fps=15)
 
     def sauvegarde(self):
         """
