@@ -36,14 +36,11 @@ class Comportement(object):
         :param vitesse_limite: vitesse_maximale autorisée sur la section de route
         :return: L'accélération du véhicule
         """
-        # Calcul du temps caractéristiques Tau
+        # Calcul du temps caractéristique Tau
         Tau = vitesse_limite / self.a_max
 
-        if Tau < 0.01:
-            Tau = 0.01
-
         # Calcul du temps de sécurité
-        temps_securite = 3 * Tau + self.temps_reaction
+        temps_securite = self.temps_reaction
 
         # Distance à respecter avec le véhicule de devant
         distance_securite = temps_securite * v_i + self.longueur

@@ -25,10 +25,10 @@ class Voiture(object):
         self.position_totale = position  # Position sur la route sans le retour à l'origine lors d'une boucle
         self.vitesse = vitesse
         self.longueur = 4  # Longueur en mètre de la voiture
-        self.a_max = 20  # Accélération maximale en m/s²
-        self.a_min = 20  # Décélération maximale en m/s²
+        self.a_max = 10  # Accélération maximale en m/s²
+        self.a_min = 15  # Décélération maximale en m/s²
         self.valide = True  # Booléen pour savoir si la voiture doit être prise en compte dans la simulation
-        self.temps_reaction = 2  # Temps de réaction commun aux conducteurs en secondes
+        self.temps_reaction = 2.0 # Temps de réaction commun aux conducteurs en secondes
         # Création du modèle pour la gestion de l'accélération
         self.comportement = Comportement(self.a_max, self.a_min, self.temps_reaction, self.longueur)
         self.numero_section = numero_section  # Numéro de la section dans laquelle se situe la voiture

@@ -10,21 +10,20 @@ Analyse du flux et de la densité des différentes simulations à partir des ré
 
 F, D, V = [], [], []
 
-fichiers = os.listdir(os.getcwd() + "/Simulation/Données/")
+fichiers = os.listdir(os.getcwd() + "/Données/")
 l = len(fichiers)
 if l > 0:
     c = 0
     for nom_fichier in fichiers:
         c += 1
         print(c/l*100, "%")
-        with open(os.getcwd() + "/Simulation/Données/" + nom_fichier, 'rb') as fichier:
+        with open(os.getcwd() + "/Données/" + nom_fichier, 'rb') as fichier:
             p = pickle.Unpickler(fichier)
             params = p.load()
             # print(params)
 
             flux_total = p.load()
             densite_totale = p.load()
-
             vitesse = p.load()
 
             # On ajoute uniquement la dernière donnée celle qui correspond à un regime stationnaire

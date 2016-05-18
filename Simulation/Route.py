@@ -181,7 +181,7 @@ class Route(object):
             aire += D
             if int(aire) >= 1:  # Si on a au moins une voiture
                 if x - x_precedent < 4 and len(positions) != 0:
-                        print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
+                    print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
                 if self.longueur - x < 4 and 0 in positions and self.boucle:
                     print("La distance minimale entre deux voitures (4 mètres) n'est pas respectée.")
                 positions.append(x)
@@ -207,7 +207,7 @@ class Route(object):
         for k in range(0, l):
             position = positions[l - k - 1]
             section = self.numero_section(position)
-            self.ajouter_voiture(position, self.sections[section][2], section)
+            self.ajouter_voiture(position, self.sections[section][2]*0.1, section)
 
         self.voitures_valides[l-1].premiere = True  # On marque la première voiture
 
@@ -548,9 +548,6 @@ class Route(object):
         # legend()
         # show()
 
-        # Writer = animation.writers['ffmpeg']
-        # writer = Writer(fps=30)
-
         nom_fichier = strftime("%Y_%H_%M_%S")
         anim.save("Animation/" + nom_fichier + ".mp4", writer='ffmpeg', fps=15)
 
@@ -563,9 +560,9 @@ class Route(object):
         nom_fichier = str(d.day) + "-" + str(d.month) + "-" + str(d.year) + "_" + str(d.hour) + str(d.minute) + str(d.second) + str(d.microsecond)
         print("Sauvegarde dans le fichier : Données/" + nom_fichier)
 
-        with open(os.getcwd() + "/Simulation/Données/" + nom_fichier, 'xb') as fichier:
+        with open(os.getcwd() + "/Données/" + nom_fichier, 'xb') as fichier:
             p = pickle.Pickler(fichier)
-            """ Enregistrement des données de la simualation """
+            """ Enregistrement des données de la simulation """
             # Paramètres de la simulation
             p.dump([
                 self.temps_total,
