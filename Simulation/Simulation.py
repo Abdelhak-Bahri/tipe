@@ -62,9 +62,9 @@ class Simulation(object):
             indice += 1
             temps_total += self.delta  # Mise à jour du temps
             i += self.delta / self.temps
-            if i >= 0.01:  # On affiche l'avancement 'p'
-                p += 0.01
-                i -= 0.01
+            if i >= 0.1:  # On affiche l'avancement 'p'
+                p += 0.1
+                i -= 0.1
                 print("Avancement de la simulation : " + str(round(p*100)) + "% (" + str(round(temps_total)) + "s de " + str(self.temps) + "s).")
         print("Fin de la simulation")
         print("Simulation réalisée en ", round(clock() - t_debut, 2), "secondes")
