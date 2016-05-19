@@ -40,30 +40,30 @@ p = 1/200
 def constante(x):
     return p
 
-s = Simulation.Simulation(300, 1/20.0)
-s.route.ajouter_section(1000, 25)
-
-s.route.ajout_indices_analyse([0, 5])
-
-resultat = s.initialisation(gaussienne, affichage=False)
-if resultat:
-    # s.analyse = True
-    # s.route.desactiver_flux_densite()
-    s.route.boucle = True
-    s.sauvegarde = False
-    # s.animation = True
-
-    # cProfile.run('s.lancer()')
-    s.lancer()
-
-# for l in range(50, 100, 5):
-#     s = Simulation.Simulation(300, 1/20.0)
-#     s.route.ajouter_section(1000, 25)
+# s = Simulation.Simulation(300, 1/20.0)
+# s.route.ajouter_section(1000, 25)
 #
-#     def constante(x):
-#         return 1/l
+# s.route.ajout_indices_analyse([0, 5])
 #
-#     s.initialisation(constante, affichage=False)
-#     s.analyse = True
+# resultat = s.initialisation(gaussienne, affichage=False)
+# if resultat:
+#     # s.analyse = True
+#     # s.route.desactiver_flux_densite()
 #     s.route.boucle = True
+#     s.sauvegarde = False
+#     # s.animation = True
+#
+#     # cProfile.run('s.lancer()')
 #     s.lancer()
+
+for l in range(4, 20, 1):
+    s = Simulation.Simulation(150, 1/20.0)
+    s.route.ajouter_section(1000, 25)
+
+    def constante(x):
+        return 1/l
+
+    s.initialisation(constante, affichage=False)
+    s.analyse = True
+    s.route.boucle = True
+    s.lancer()

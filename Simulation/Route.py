@@ -571,12 +571,31 @@ class Route(object):
             ])
 
             # Calcul de la vitesse moyenne sur la route
-            if self.N != 0:
-                vitesse_moyenne = 0
+            speed = 0
+            if self.N >= 1:
                 for voiture in self.voitures_valides:
-                    vitesse_moyenne += voiture.vitesse
-                vitesse_moyenne /= self.N
+                    speed += voiture.vitesse
+                speed /= self.N
 
-            p.dump(self.flux_total)
-            p.dump(self.densite_totale)
-            p.dump(vitesse_moyenne)
+            # Calcul de la distance moyenne entre les voitures
+            spacing = 0
+            if self.N >= 2:
+                for i in range(self.N - 1):
+                    spacing += self.voitures_valides[i+1].position_totale - self.voitures_valides[i].position_totale
+                spacing /= (self.N - 1)
+
+            pace = 0
+            if self.N >= 1:
+                c = 0
+                for voiture in self.voitures_valides:
+                    if voiture.vitesse != 0:
+                        pace += 1/(voiture.vitesse)
+                    c += 1
+                pace /= c
+
+            p.dump(self.flux_total[-1][1])
+            p.dump(self.densite_totale[-1][1])
+            p.dump(speed)
+            p.dump(spacing)
+            p.dump(1/self.flux_total[-1][1])
+            p.dump(pace)

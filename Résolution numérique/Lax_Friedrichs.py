@@ -107,7 +107,7 @@ def resolution():
         for x in range(1, Nx-1):
             T[x, t+1] = 0.5*(T[x+1, t] + T[x-1, t]) - Dt*(f(T[x+1, t]) - f(T[x-1, t]))/(2*Dx)
 
-    visualisation(T)
+    # visualisation(T)
     afficher_2D(T)
 
 resolution()
