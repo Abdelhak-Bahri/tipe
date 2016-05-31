@@ -6,37 +6,45 @@ from matplotlib import animation
 
 """
 Résolution numérique de l'équation aux dérivées partielles:
-    du/dx + df(u)/dt = 0
+    du/dt + df(u)/dx = 0
     u(x,0) = u0(x)
 """
 
 # Paramètres de la simulation numérique
-xmax = 20
-tmax = 40
-Vmax = 0.5
-Pmax = 1
+xmax = 500
+tmax = 20
+Vmax = 25
+Pmax = 0.25
 
 # Pas d'intégration
-Dt = 0.1
-Dx = 0.1
+Dt = 0.005
+Dx = 0.005
 
 # Nombre de points de calcul
 Nx = int(xmax // Dx) + 1
 Nt = int(tmax // Dt) + 1
 
+# def f(u):
+#     """ Fonction f(u) de l'équation différentielle """
+#     return u**2/2
+
 def f(u):
     """ Fonction f(u) de l'équation différentielle """
-    return Vmax*u*(1-u/Pmax)
+    if u < 0.01:
+        return 24*u
+    else:
+        return Pmax - u
 
 def initialisation():
     """ Renvoie u0 la condition initiale du problème """
-    t = choc()
+    t = gaussienne()
+    # return 1-2*t/Pmax
     return t
 
 def bord(T, t):
     """ Conditions aux bords pour x=0 et x=xmax au temps d'intégration t """
     T[0, t] = 1
-    T[-1, t] = 0
+    T[-1, t] = 1
     return T
 
 
@@ -48,16 +56,20 @@ def choc():
         t[x] = 1
     return t
 
+sigma = 50
+mu = 250
+A = 40
+
 def gaussienne():
-    """ Répartition gaussienne centrée en x=10 """
-    return np.array([np.exp(-(x*Dx - 10)**2) for x in range(0, Nx)])
+    """ Répartition gaussienne """
+    return np.array([np.exp(-(x*Dx-mu)**2/(2*sigma**2))/(sigma*2*np.pi) * A + 0.1 for x in range(0, Nx)])
 
 
 # Fonctions permettant l'affichage des résultats et leur sauvegarde
 def afficher(T):
     """ Affichage simple de u(x, t) au temps t en fonction de x """
     X = np.arange(0, Nx) * Dx
-    plt.plot(X, T)
+    plt.plot(T, X)
     plt.show()
 
 def afficher_2D(T):
@@ -70,32 +82,6 @@ def afficher_2D(T):
     plt.ylabel("Position x (m)")
     plt.show()
 
-def visualisation(T):
-    """ Animation de u(x,t) en fonction du temps avec sauvegarde sous forme d'un fichier mp4 """
-    fig = plt.figure()
-    data, = plt.plot([], [])
-    plt.xlim(0, xmax)
-    plt.ylim(0, 1.2)
-
-    X = np.arange(0, Nx) * Dx
-
-    def update(k):
-        Y = T[:, k]
-        data.set_data(X, Y)
-        # plt.title("Temps : " + str(round(Dt * k)) + "s")
-        return data
-
-    anim = animation.FuncAnimation(fig, update, frames=Nt, interval=Dt/1000, repeat=False)
-
-    plt.legend()
-    plt.show()
-
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=30)
-
-    # anim.save('Résultats/bouchon_01.mp4', writer=writer)
-
-
 def resolution():
     T = np.zeros((Nx, Nt))
     u0 = initialisation()
@@ -107,7 +93,24 @@ def resolution():
         for x in range(1, Nx-1):
             T[x, t+1] = 0.5*(T[x+1, t] + T[x-1, t]) - Dt*(f(T[x+1, t]) - f(T[x-1, t]))/(2*Dx)
 
-    # visualisation(T)
+    # T = Pmax*(1 - T)/2
+
     afficher_2D(T)
 
 resolution()
+
+
+# sigma = 50
+# mu = 250
+# A = 40
+# cste = 0.1
+# def f(x):
+#     return np.exp(-(x-mu)**2/(2*sigma**2))/(sigma*2*np.pi) * A + cste
+#
+# X = [x*Dx for x in range(0, Nx)]
+# Y = [f(x) for x in X]
+#
+# plt.plot(X, Y)
+# plt.xlim(0, xmax)
+# # plt.ylim(0, 0.25)
+# plt.show()

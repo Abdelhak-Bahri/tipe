@@ -40,7 +40,7 @@ class Comportement(object):
         Tau = vitesse_limite / self.a_max
 
         # Calcul du temps de sécurité
-        temps_securite = 2
+        temps_securite = self.temps_reaction
 
         # Distance à respecter avec le véhicule de devant
         distance_securite = temps_securite * v_i + self.longueur

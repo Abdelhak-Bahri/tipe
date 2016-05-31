@@ -7,13 +7,13 @@ from random import random
 
 # Paramètres de la gaussienne
 sigma = 100
-mu = 500
+mu = 700
 A = 30
-cste = 0.005
+cste = 0.01
 def gaussienne(x):
     return exp(-(x-mu)**2/(2*sigma**2))/(sigma*2*pi) * A + cste
 
-# Paramètres de la réparition aléatoire
+# Paramètres de la répartition aléatoire
 l = 1000
 nb = int(random())*20 + 30
 f0 = 1/(2*l)
@@ -36,34 +36,46 @@ def feux_rouges(x):
         return 0
 
 # Paramètres pour la répartition constante
-p = 1/200
+p = 0.2
 def constante(x):
     return p
 
-# s = Simulation.Simulation(300, 1/20.0)
-# s.route.ajouter_section(1000, 25)
+s = Simulation.Simulation(3000, 1/20.0)
+s.route.ajouter_section(1400, 25)
+
+s.route.ajout_indices_analyse([0])
+
+resultat = s.initialisation(gaussienne, affichage=True)
+if resultat:
+    # s.analyse = True
+    s.route.desactiver_flux_densite()
+    s.route.boucle = True
+    s.sauvegarde = False
+    # s.animation = True
+
+    # cProfile.run('s.lancer()')
+    s.lancer()
+
+# for l in range(4, 20, 1):
+#     s = Simulation.Simulation(300, 1/20.0)
+#     s.route.ajouter_section(1000, 25)
 #
-# s.route.ajout_indices_analyse([0, 5])
+#     def constante(x):
+#         return 1/l
 #
-# resultat = s.initialisation(gaussienne, affichage=False)
-# if resultat:
-#     # s.analyse = True
-#     # s.route.desactiver_flux_densite()
+#     s.initialisation(constante, affichage=False)
+#     s.analyse = True
 #     s.route.boucle = True
-#     s.sauvegarde = False
-#     # s.animation = True
-#
-#     # cProfile.run('s.lancer()')
 #     s.lancer()
 
-for l in range(4, 20, 1):
-    s = Simulation.Simulation(150, 1/20.0)
-    s.route.ajouter_section(1000, 25)
-
-    def constante(x):
-        return 1/l
-
-    s.initialisation(constante, affichage=False)
-    s.analyse = True
-    s.route.boucle = True
-    s.lancer()
+# for l in range(20, 250, 5):
+#     s = Simulation.Simulation(150, 1/20.0)
+#     s.route.ajouter_section(1000, 25)
+#
+#     def constante(x):
+#         return 1/l
+#
+#     s.initialisation(constante, affichage=False)
+#     s.analyse = True
+#     s.route.boucle = True
+#     s.lancer()
